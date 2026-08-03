@@ -3,9 +3,13 @@
  작성자 : P023_장현진_Day1 종합 실습
  작성일 : 2026.08.03
  GitHub : https://github.com/KR-Nom/final_day1_report
- 버전   : v1.0.0
+ 버전   : v1.1.0
 --------------------------------------------------------------------
  변경사항
+   v1.1.0 (2026.08.03)
+   - 100행부터 100만 행까지 CSV·Parquet 성능 비교 추가
+   - 합성 매출 데이터 자동 생성 및 결과표 CSV 저장 추가
+
    v1.0.0 (2026.08.03)
    - asyncio.gather()를 이용한 날씨·국가·IP API 동시 수집
    - Pydantic v2 모델을 이용한 응답 데이터 검증
@@ -32,11 +36,12 @@ import os
 import time
 from collections.abc import Awaitable, Callable
 from datetime import datetime
-from functools import wraps
+from functools import partial, wraps
 from pathlib import Path
 from typing import Any, ParamSpec, TypeVar
 
 import httpx
+import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field, ValidationError
 
@@ -50,6 +55,7 @@ COUNTRY_URL = "https://countries.dev/alpha/KOR"
 IP_URL = "http://ip-api.com/json/8.8.8.8"
 MAX_API_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
+BENCHMARK_SIZES = (100, 1_000, 10_000, 100_000, 1_000_000)
 
 LOGGER = logging.getLogger(__name__)
 P = ParamSpec("P")
@@ -334,6 +340,103 @@ def print_result(dataframe: pd.DataFrame, result: StorageResult) -> None:
     )
 
 
+#================================================================
+# 11) 데이터 크기별 CSV·Parquet 성능 비교
+def create_synthetic_sales(csv_path: Path, row_count: int = 1_000_000) -> None:
+    """벤치마크용 합성 매출 데이터를 동일한 난수 조건으로 생성합니다."""
+    if csv_path.is_file():
+        return
+
+    LOGGER.info("합성 매출 데이터 생성 시작: %s건", f"{row_count:,}")
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    random = np.random.default_rng(seed=42)
+    quantity = random.integers(1, 11, size=row_count)
+    unit_price = random.integers(1_000, 100_001, size=row_count)
+    sales = pd.DataFrame(
+        {
+            "order_id": np.arange(1, row_count + 1),
+            "date": pd.Timestamp("2026-01-01")
+            + pd.to_timedelta(random.integers(0, 365, size=row_count), unit="D"),
+            "region": random.choice(["서울", "경기", "부산", "대구"], row_count),
+            "category": random.choice(
+                ["전자기기", "의류", "식품", "생활용품"], row_count
+            ),
+            "quantity": quantity,
+            "unit_price": unit_price,
+            "sales_amount": quantity * unit_price,
+        }
+    )
+    sales.to_csv(csv_path, index=False, encoding="utf-8")
+    LOGGER.info("합성 매출 데이터 생성 완료: %s", csv_path)
+
+
+def benchmark_storage_formats(
+    source_csv: Path,
+    output_dir: Path,
+    sizes: tuple[int, ...] = BENCHMARK_SIZES,
+) -> pd.DataFrame:
+    """행 수를 늘리며 CSV와 Parquet의 크기와 처리 시간을 측정합니다."""
+    dataframe_full = pd.read_csv(source_csv)
+    if max(sizes) > len(dataframe_full):
+        raise PipelineError("합성 데이터 행 수가 최대 벤치마크 크기보다 작습니다")
+
+    benchmark_dir = output_dir / "benchmark_temp"
+    benchmark_dir.mkdir(parents=True, exist_ok=True)
+    results: list[dict[str, float | int]] = []
+
+    for row_count in sizes:
+        dataframe = dataframe_full.sample(n=row_count, random_state=42)
+        csv_path = benchmark_dir / f"tmp_{row_count}.csv"
+        parquet_path = benchmark_dir / f"tmp_{row_count}.parquet"
+
+        _, csv_write = measure_operation(
+            partial(dataframe.to_csv, csv_path, index=False, encoding="utf-8")
+        )
+        _, parquet_write = measure_operation(
+            partial(dataframe.to_parquet, parquet_path, index=False)
+        )
+        _, csv_read = measure_operation(partial(pd.read_csv, csv_path))
+        _, parquet_read = measure_operation(partial(pd.read_parquet, parquet_path))
+
+        results.append(
+            {
+                "rows": row_count,
+                "csv_size_kb": csv_path.stat().st_size / 1024,
+                "parquet_size_kb": parquet_path.stat().st_size / 1024,
+                "csv_write_s": csv_write,
+                "parquet_write_s": parquet_write,
+                "csv_read_s": csv_read,
+                "parquet_read_s": parquet_read,
+            }
+        )
+
+        # 측정용 대용량 임시 파일은 결과 기록 후 바로 정리합니다.
+        csv_path.unlink()
+        parquet_path.unlink()
+
+    benchmark_dir.rmdir()
+    result = pd.DataFrame(results)
+    result.to_csv(output_dir / "storage_benchmark_results.csv", index=False)
+    return result
+
+
+def print_benchmark_result(result: pd.DataFrame) -> None:
+    """결과보고서 캡처에 사용할 성능 비교표를 출력합니다."""
+    display_result = result.copy()
+    display_result["rows"] = display_result["rows"].map(lambda value: f"{value:,}")
+    float_columns = display_result.columns.drop("rows")
+    display_result[float_columns] = display_result[float_columns].map(
+        lambda value: f"{value:.6f}"
+    )
+
+    print("\n" + "=" * 100)
+    print("데이터 크기별 CSV·Parquet 저장 성능 비교 결과")
+    print("=" * 100)
+    print(display_result.to_string(index=False))
+    print("=" * 100)
+#================================================================
+
+
 async def main() -> int:
     """환경변수 출력 경로를 적용하여 전체 프로그램을 실행합니다."""
     logging.basicConfig(
@@ -344,6 +447,9 @@ async def main() -> int:
 
     try:
         dataframe, result = await run_pipeline(output_dir)
+        synthetic_csv = output_dir / "synthetic_sales.csv"
+        create_synthetic_sales(synthetic_csv)
+        benchmark_result = benchmark_storage_formats(synthetic_csv, output_dir)
     except httpx.HTTPError as error:
         LOGGER.error("API 요청 오류: %s", error)
         return 1
@@ -358,6 +464,8 @@ async def main() -> int:
         return 1
 
     print_result(dataframe, result)
+    print_benchmark_result(benchmark_result)
+    print(f"\n상세 결과 저장: {output_dir / 'storage_benchmark_results.csv'}")
     return 0
 
 

@@ -111,3 +111,21 @@ def test_save_and_compare_creates_both_files(tmp_path: Path) -> None:
     assert (tmp_path / "day1_report.parquet").is_file()
     assert result.csv_size > 0
     assert result.parquet_size > 0
+
+
+def test_storage_benchmark_creates_result_table(tmp_path: Path) -> None:
+    """크기별 비교 결과가 표와 CSV 파일로 생성됩니다."""
+    source_csv = tmp_path / "synthetic_sales.csv"
+    pipeline.create_synthetic_sales(source_csv, row_count=120)
+
+    result = pipeline.benchmark_storage_formats(
+        source_csv,
+        tmp_path,
+        sizes=(10, 100),
+    )
+
+    assert result["rows"].tolist() == [10, 100]
+    assert (result["csv_size_kb"] > 0).all()
+    assert (result["parquet_size_kb"] > 0).all()
+    assert (tmp_path / "storage_benchmark_results.csv").is_file()
+    assert not (tmp_path / "benchmark_temp").exists()

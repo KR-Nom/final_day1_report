@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Day 1 종합 실습 결과보고서</title>
+  <style>
+    :root {
+      --navy: #16324f;
+      --blue: #2878b5;
+      --sky: #eaf4fb;
+      --ink: #20262e;
+      --muted: #647282;
+      --line: #d8e1e8;
+      --green: #16835b;
+      --paper: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: #edf1f4; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      line-height: 1.55;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(22, 50, 79, 0.95);
+    }
+
+    button {
+      border: 0;
+      border-radius: 6px;
+      padding: 9px 16px;
+      color: white;
+      background: var(--blue);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .hint { align-self: center; color: #dceaf5; font-size: 12px; }
+
+    .page {
+      position: relative;
+      width: 210mm;
+      min-height: 297mm;
+      margin: 14px auto;
+      padding: 18mm 18mm 16mm;
+      overflow: hidden;
+      background: var(--paper);
+      box-shadow: 0 4px 18px rgba(32, 44, 56, 0.13);
+      page-break-after: always;
+    }
+
+    .page:last-child { page-break-after: auto; }
+    .page-number {
+      position: absolute;
+      right: 18mm;
+      bottom: 9mm;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    h1, h2, h3 { margin-top: 0; color: var(--navy); }
+    h1 { font-size: 34px; line-height: 1.25; }
+    h2 {
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 3px solid var(--blue);
+      font-size: 24px;
+    }
+    h3 { margin-bottom: 7px; font-size: 16px; }
+    p { margin: 7px 0 12px; }
+    ul { margin: 7px 0 14px; padding-left: 22px; }
+    li { margin: 5px 0; }
+
+    .cover {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 250mm;
+    }
+    .cover::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 12mm;
+      background: linear-gradient(90deg, var(--navy), var(--blue));
+    }
+    .eyebrow {
+      margin-bottom: 14px;
+      color: var(--blue);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+    .subtitle { color: var(--muted); font-size: 18px; }
+    .author-box {
+      width: 100%;
+      margin-top: 50px;
+      padding: 18px 22px;
+      border-left: 5px solid var(--blue);
+      background: var(--sky);
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .card {
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+    }
+    .card.accent { border-top: 5px solid var(--blue); }
+    .metric {
+      color: var(--blue);
+      font-size: 28px;
+      font-weight: 800;
+    }
+    .small { color: var(--muted); font-size: 12px; }
+
+    .flow {
+      display: flex;
+      align-items: stretch;
+      gap: 7px;
+      margin: 18px 0;
+    }
+    .flow-item {
+      flex: 1;
+      padding: 12px 8px;
+      border-radius: 7px;
+      color: white;
+      background: var(--navy);
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .arrow { align-self: center; color: var(--blue); font-weight: 900; }
+
+    .terminal {
+      margin: 12px 0 18px;
+      padding: 15px 17px;
+      overflow: hidden;
+      border-radius: 9px;
+      color: #e8f0f5;
+      background: #14202b;
+      box-shadow: inset 0 0 0 1px #2a3a48;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 10.5px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .terminal::before {
+      content: "●  ●  ●";
+      display: block;
+      margin-bottom: 10px;
+      color: #f08b7d;
+      letter-spacing: 4px;
+    }
+    .ok { color: #76e1aa; font-weight: 700; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+    th, td { padding: 8px 7px; border: 1px solid var(--line); text-align: right; }
+    th { color: white; background: var(--navy); }
+    th:first-child, td:first-child { text-align: center; }
+    tr:nth-child(even) td { background: #f5f8fa; }
+
+    .chart { margin-top: 15px; padding: 13px; border: 1px solid var(--line); border-radius: 9px; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 76px 1fr 70px;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+      font-size: 12px;
+    }
+    .bar-bg { height: 16px; border-radius: 4px; background: #e5ecf1; overflow: hidden; }
+    .bar { height: 100%; background: var(--blue); }
+    .bar.parquet { background: var(--green); }
+
+    .callout {
+      margin: 14px 0;
+      padding: 13px 16px;
+      border-left: 5px solid var(--green);
+      background: #eaf7f1;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      color: #173d5c;
+      background: #eaf1f6;
+      font-family: "SFMono-Regular", Consolas, monospace;
+    }
+
+    [contenteditable="true"]:focus { outline: 2px dashed #65a8d5; outline-offset: 4px; }
+
+    @page { size: A4; margin: 0; }
+    @media print {
+      html, body { background: white; }
+      .toolbar { display: none; }
+      .page { margin: 0; box-shadow: none; }
+    }
+  </style>
+</head>
+<body contenteditable="true">
+  <div class="toolbar" contenteditable="false">
+    <button onclick="window.print()">PDF로 인쇄</button>
+    <span class="hint">본문을 클릭하면 바로 수정할 수 있습니다.</span>
+  </div>
+
+  <section class="page cover">
+    <div class="eyebrow">[Day 1] 종합 실습 결과보고서</div>
+    <h1>비동기 데이터 수집·검증 및<br>CSV·Parquet 성능 비교</h1>
+    <p class="subtitle">Python 데이터 분석을 위한 수집·품질 파이프라인</p>
+    <div class="author-box">
+      <strong>판교 1반 장현진</strong><br>
+      작성일: 2026.08.03<br>
+      프로젝트 버전: v1.1.0<br>
+      GitHub: github.com/KR-Nom/final_day1_report
+    </div>
+    <div class="page-number">1 / 8</div>
+  </section>
+
+  <section class="page">
+    <h2>1. 과제 개요</h2>
+    <p>Open-Meteo, Countries.dev, ip-api의 JSON 데이터를 비동기로 동시에 수집했다. 수집 결과는 Pydantic v2 모델로 타입과 값의 범위를 검증하고, 검증을 통과한 데이터만 Pandas DataFrame으로 변환했다.</p>
+    <p>날씨·국가·IP 정보를 시간대별 하나의 표로 결합한 뒤 CSV와 Parquet으로 저장하고, 읽기·쓰기 시간과 파일 크기를 비교했다. 저장 형식의 차이를 데이터 크기별로 확인하기 위해 100행부터 100만 행까지 합성 매출 데이터 벤치마크도 수행했다.</p>
+    <div class="grid-2">
+      <div class="card accent">
+        <h3>비동기 수집</h3>
+        <p><code>asyncio.gather()</code>와 <code>httpx.AsyncClient</code>를 사용해 날씨·국가·IP API를 동시에 호출했다.</p>
+      </div>
+      <div class="card accent">
+        <h3>스키마 검증</h3>
+        <p>Pydantic v2 모델로 자료형, 필수 값, 기온·강수확률·위경도 범위를 검증했다.</p>
+      </div>
+      <div class="card accent">
+        <h3>저장 성능 비교</h3>
+        <p>동일한 데이터를 CSV와 Parquet으로 저장하고 읽기·쓰기 시간과 파일 크기를 측정했다.</p>
+      </div>
+      <div class="card accent">
+        <h3>코드 품질</h3>
+        <p>pytest로 정상·오류·저장 흐름을 테스트하고 Ruff로 코드 품질을 확인했다.</p>
+      </div>
+    </div>
+    <h3 style="margin-top:18px">전체 처리 흐름</h3>
+    <div class="flow">
+      <div class="flow-item">API 3개<br>동시 호출</div><div class="arrow">→</div>
+      <div class="flow-item">응답 상태<br>확인·재시도</div><div class="arrow">→</div>
+      <div class="flow-item">Pydantic<br>검증</div><div class="arrow">→</div>
+      <div class="flow-item">DataFrame<br>통합</div><div class="arrow">→</div>
+      <div class="flow-item">CSV·Parquet<br>저장·비교</div>
+    </div>
+    <div class="callout"><strong>과제 목표:</strong> 외부 데이터 수집, 스키마 검증, 파일 저장, 성능 측정, 자동 테스트를 하나의 재현 가능한 Python 파이프라인으로 구성한다.</div>
+    <div class="page-number">2 / 8</div>
+  </section>
+
+  <section class="page">
+    <h2>2. 프로젝트 구조 및 개발 환경</h2>
+    <div class="grid-2">
+      <div class="card"><h3>개발 환경</h3><ul><li>Python 3.11.15</li><li>httpx 0.28.1</li><li>Pydantic 2.13.4</li><li>Pandas 3.0.5</li><li>PyArrow 25.0.0</li><li>NumPy 2.4.6</li></ul></div>
+      <div class="card"><h3>사용 API</h3><ul><li>Open-Meteo: 서울 3일 날씨</li><li>Countries.dev: 한국 국가 정보</li><li>ip-api: 8.8.8.8 위치 정보</li></ul></div>
+    </div>
+    <h3 style="margin-top:18px">프로젝트 구성</h3>
+    <div class="terminal">final_day1_report/
+├── 판교_1반_장현진_day1종합실습.py
+├── test_day1_pipeline.py
+├── requirements.txt
+├── README.md
+├── final_day1_report.html
+└── .gitignore</div>
+    <p>제출 파일이 여러 폴더로 분산되지 않도록 메인 코드와 테스트를 프로젝트 루트에 배치했다. 실행 데이터는 <code>data/</code>에 생성되지만 Git에는 포함되지 않는다.</p>
+    <h3>생성 결과</h3>
+    <ul>
+      <li><code>day1_report.csv / parquet</code>: API 검증 결과</li>
+      <li><code>synthetic_sales.csv</code>: 100만 행 합성 매출 데이터</li>
+      <li><code>storage_benchmark_results.csv</code>: 크기별 성능 측정표</li>
+    </ul>
+    <div class="page-number">3 / 8</div>
+  </section>
+
+  <section class="page">
+    <h2>3. 코드 분석</h2>
+    <h3>3.1 비동기 API 수집</h3>
+    <ul>
+      <li><code>httpx.AsyncClient</code> 하나를 생성해 날씨·국가·IP 요청에서 재사용했다.</li>
+      <li><code>asyncio.gather()</code>로 세 코루틴을 함께 스케줄링해 동시에 요청했다.</li>
+      <li><code>raise_for_status()</code>로 HTTP 오류를 확인하고, 429·5xx 오류는 최대 3회 재시도했다.</li>
+      <li>과제에서 지정한 <code>http://ip-api.com/json/8.8.8.8</code> 주소를 사용했다.</li>
+    </ul>
+    <h3>3.2 Pydantic v2 검증</h3>
+    <ul>
+      <li>기온은 -100~60℃, 강수확률은 0~100 범위로 제한했다.</li>
+      <li>위도는 -90~90, 경도는 -180~180 범위로 제한했다.</li>
+      <li>날씨의 시간·기온·강수확률 배열 길이가 같은지와 빈 배열 여부를 확인했다.</li>
+      <li>국가명·수도·지역은 빈 문자열을 허용하지 않고 인구는 양수만 허용했다.</li>
+      <li>IP 응답의 <code>status</code>가 <code>success</code>인지 먼저 확인했다.</li>
+    </ul>
+    <h3>3.3 DataFrame 변환</h3>
+    <ul>
+      <li>날씨는 시간대별 한 행으로 변환하고 Pydantic의 datetime 검증을 적용했다.</li>
+      <li>국가와 IP 정보는 각 날씨 행에 결합하여 하나의 분석용 DataFrame으로 구성했다.</li>
+      <li>저장 전 모든 값이 검증된 모델에서 나온 데이터인지 보장했다.</li>
+    </ul>
+    <div class="callout"><strong>설계 판단:</strong> 현재 구현은 한 API가 최종 실패하면 전체 저장을 중단하는 fail-fast 방식이다. 부분 성공 결과를 저장해야 한다면 <code>return_exceptions=True</code>와 API별 오류 처리를 추가할 수 있다.</div>
+    <div class="page-number">4 / 8</div>
+  </section>
+
+  <section class="page">
+    <h2>4. 저장 및 프로그램 실행 결과</h2>
+    <h3>4.1 저장과 성능 측정</h3>
+    <ul>
+      <li>CSV와 Parquet 모두 <code>index=False</code>로 저장했다.</li>
+      <li>Parquet은 Pandas가 설치된 PyArrow 엔진을 사용해 저장했다.</li>
+      <li><code>time.perf_counter()</code>로 읽기·쓰기 시간을 각각 측정했다.</li>
+      <li>저장한 파일을 다시 읽고 원본과 행·열 개수가 다르면 예외를 발생시켰다.</li>
+      <li>벤치마크 임시 파일은 크기를 기록한 직후 삭제해 결과 폴더를 정리했다.</li>
+    </ul>
+    <h3>4.2 실제 실행 결과</h3>
+    <div class="terminal">$ python 판교_1반_장현진_day1종합실습.py
+
+국가 API 요청 성공: 상태 코드 200
+IP API 요청 성공: 상태 코드 200
+날씨 API 요청 성공: 상태 코드 200
+collect_all 실행 시간: 1.179592초
+날씨 데이터 저장 완료: 72건
+run_pipeline 실행 시간: 1.242206초
+
+<span class="ok">날씨 데이터: 72건</span>
+국가 정보: Korea (Republic of) / Seoul
+IP 위치: United States Ashburn
+CSV - 쓰기:0.002949초, 읽기:0.001447초, 크기:7,992 bytes
+Parquet - 쓰기:0.024893초, 읽기:0.023952초, 크기:8,316 bytes</div>
+    <div class="grid-2">
+      <div class="card"><div class="metric">3 / 3</div><strong>API 정상 응답</strong><p class="small">날씨·국가·IP API 모두 HTTP 200</p></div>
+      <div class="card"><div class="metric">72건</div><strong>날씨 데이터 검증 완료</strong><p class="small">3일 시간대별 기온과 강수확률</p></div>
+    </div>
+    <div class="callout"><strong>확인 결과:</strong> API 호출, 응답 검증, DataFrame 구성, CSV·Parquet 저장까지 전체 파이프라인이 정상 종료되었다.</div>
+    <div class="page-number">5 / 8</div>
+  </section>
+
+  <section class="page">
+    <h2>5. 데이터 크기별 CSV·Parquet 비교</h2>
+    <table>
+      <thead><tr><th>행 수</th><th>CSV 크기(KB)</th><th>Parquet 크기(KB)</th><th>CSV 쓰기(s)</th><th>Parquet 쓰기(s)</th><th>CSV 읽기(s)</th><th>Parquet 읽기(s)</th></tr></thead>
+      <tbody>
+        <tr><td>100</td><td>4.91</td><td>6.95</td><td>0.000465</td><td>0.000695</td><td>0.000403</td><td>0.000711</td></tr>
+        <tr><td>1,000</td><td>48.63</td><td>25.94</td><td>0.000978</td><td>0.000915</td><td>0.000638</td><td>0.000776</td></tr>
+        <tr><td>10,000</td><td>484.21</td><td>215.83</td><td>0.007274</td><td>0.002497</td><td>0.003375</td><td>0.000932</td></tr>
+        <tr><td>100,000</td><td>4,842.17</td><td>1,982.14</td><td>0.067426</td><td>0.015315</td><td>0.029229</td><td>0.002494</td></tr>
+        <tr><td>1,000,000</td><td>48,427.71</td><td>14,649.81</td><td>0.679363</td><td>0.101345</td><td>0.272822</td><td>0.013886</td></tr>
+      </tbody>
+    </table>
+    <div class="chart">
+      <h3>100만 행 파일 크기 비교</h3>
+      <div class="bar-row"><span>CSV</span><div class="bar-bg"><div class="bar" style="width:100%"></div></div><strong>48.4 MB</strong></div>
+      <div class="bar-row"><span>Parquet</span><div class="bar-bg"><div class="bar parquet" style="width:30.3%"></div></div><strong>14.6 MB</strong></div>
+      <h3 style="margin-top:14px">100만 행 읽기 시간 비교</h3>
+      <div class="bar-row"><span>CSV</span><div class="bar-bg"><div class="bar" style="width:100%"></div></div><strong>0.273초</strong></div>
+      <div class="bar-row"><span>Parquet</span><div class="bar-bg"><div class="bar parquet" style="width:5.1%"></div></div><strong>0.014초</strong></div>
+    </div>
+    <div class="callout"><strong>분석:</strong> 100행에서는 CSV가 더 작고 처리 시간 차이도 작았다. 데이터가 증가할수록 Parquet의 장점이 커졌으며, 100만 행에서는 CSV의 약 30% 크기, 약 19.6배 빠른 읽기, 약 6.7배 빠른 쓰기를 기록했다.</div>
+    <p class="small">측정 시간은 실행 환경과 캐시 상태에 따라 달라질 수 있으므로 절대값보다 데이터 증가에 따른 변화 추세를 중심으로 해석했다.</p>
+    <div class="page-number">6 / 8</div>
+  </section>
+
+  <section class="page">
+    <h2>6. 테스트 및 코드 검사 결과</h2>
+    <div class="terminal">$ python -m pip check
+<span class="ok">No broken requirements found.</span>
+
+$ python -m ruff check .
+<span class="ok">All checks passed!</span>
+
+$ python -m pytest -v
+test_fetch_json_retries_429[asyncio] PASSED
+test_validate_weather_creates_models PASSED
+test_weather_range_validation PASSED
+test_validate_weather_rejects_mismatched_lengths PASSED
+test_save_and_compare_creates_both_files PASSED
+test_storage_benchmark_creates_result_table PASSED
+
+<span class="ok">================ 6 passed in 0.25s ================</span></div>
+    <h3>테스트 범위</h3>
+    <ul>
+      <li>HTTP 429 발생 후 정상 응답 재시도</li>
+      <li>정상 날씨 payload의 Pydantic 모델 변환</li>
+      <li>강수확률 101 입력에 대한 범위 검증 오류</li>
+      <li>날씨 배열 길이 불일치에 대한 파이프라인 오류</li>
+      <li>CSV·Parquet 파일 생성과 파일 크기 확인</li>
+      <li>크기별 벤치마크 결과표 생성과 임시 파일 정리</li>
+    </ul>
+    <div class="callout"><strong>테스트 원칙:</strong> 자동 테스트에서는 실제 외부 API를 호출하지 않고 고정 응답을 사용해 네트워크 상태와 무관하게 동일한 결과가 나오도록 구성했다.</div>
+    <div class="page-number">7 / 8</div>
+  </section>
+
+  <section class="page">
+    <h2>7. 본인 의견 및 개선 사항</h2>
+    <h3>실습을 통해 확인한 점</h3>
+    <ul>
+      <li>비동기 처리는 함수에 <code>async</code>를 붙이는 것만으로 끝나는 것이 아니라, 여러 코루틴을 <code>asyncio.gather()</code>로 함께 스케줄링해야 동시 요청의 효과를 얻을 수 있었다.</li>
+      <li>HTTP 요청이 성공해도 값의 범위나 배열 길이가 잘못될 수 있으므로 저장 전에 Pydantic 검증이 필요하다고 판단했다.</li>
+      <li>CSV와 Parquet 중 한 형식이 항상 우수한 것은 아니었다. 작은 데이터에서는 CSV가 단순하고 효율적이지만, 데이터가 커질수록 Parquet의 압축과 읽기 성능이 유리했다.</li>
+      <li>성능 결과는 행 수, 열 구성, 자료형과 실행 환경을 함께 고려해 해석해야 한다.</li>
+    </ul>
+    <h3>추가 개선 사항</h3>
+    <ul>
+      <li>행·열 개수뿐 아니라 dtype과 주요 값까지 비교하는 저장 무결성 검사를 추가한다.</li>
+      <li>벤치마크를 여러 번 반복해 평균과 표준편차를 계산하고 압축 방식별 결과를 비교한다.</li>
+      <li>데이터가 커질 경우 날짜별 Parquet 파티셔닝을 적용한다.</li>
+      <li>출력 경로, timeout, 반복 횟수를 명령행 옵션으로 선택할 수 있도록 개선한다.</li>
+      <li>부분 API 실패 허용 여부를 설정으로 분리하고 마지막 정상 데이터 캐시를 활용한다.</li>
+    </ul>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card"><div class="metric">6 passed</div><strong>자동 테스트</strong></div>
+      <div class="card"><div class="metric">0 errors</div><strong>Ruff 검사</strong></div>
+      <div class="card"><div class="metric">72 rows</div><strong>날씨 데이터</strong></div>
+      <div class="card"><div class="metric">1M rows</div><strong>최대 벤치마크</strong></div>
+    </div>
+    <div class="callout" style="margin-top:18px"><strong>최종 의견:</strong> 이번 실습은 단순 API 호출을 넘어 검증·저장·성능 측정·테스트를 연결하면서 데이터 파이프라인의 기본 품질 관리 흐름을 직접 확인한 과정이었다.</div>
+    <div class="page-number">8 / 8</div>
+  </section>
+</body>
+</html>
